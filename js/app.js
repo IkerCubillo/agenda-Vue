@@ -1,19 +1,19 @@
-import { VueFire, VueFireFirestoreOptionsAPI } from 'vuefire';
+import Vue from 'vue';
+import { VueFire, VueFireFirestoreOptionsAPI, bindFirestoreRef } from 'vuefire';
 import { db } from './firebase';
 
-Vue.use(VueFire, {
-    modules: [VueFireFirestoreOptionsAPI],
-});
+Vue.use(VueFire);
 
 new Vue({
     el: '#app',
     firestore() {
         return {
-            contactos: this.$firestore.collection('contactos'), // Enlace con la colección en Firestore
+            // Usamos bindFirestoreRef para hacer la referencia reactiva
+            contactos: bindFirestoreRef('contactos', db.collection('contactos')),
         };
     },
     data: {
-        contactos: [], // Esta lista se sincronizará automáticamente con Firestore
+        contactos: [], // Esta lista se sincroniza automáticamente con Firestore
         nuevoContacto: { nombre: '', email: '', telefono: '' },
     },
     methods: {
@@ -23,14 +23,15 @@ new Vue({
                 this.nuevoContacto.email &&
                 this.nuevoContacto.telefono
             ) {
-                await this.contactos.add({ ...this.nuevoContacto });
-                this.nuevoContacto = { nombre: '', email: '', telefono: '' };
+                // Añadimos el nuevo contacto a la colección
+                await db.collection('contactos').add({ ...this.nuevoContacto });
+                this.nuevoContacto = { nombre: '', email: '', telefono: '' }; // Limpiar formulario
             } else {
                 alert('Por favor, completa todos los campos.');
             }
         },
         async eliminarContacto(id) {
-            await this.contactos.doc(id).delete();
+            await db.collection('contactos').doc(id).delete(); // Eliminamos contacto por ID
         },
     },
 });
